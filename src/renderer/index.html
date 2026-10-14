@@ -1,0 +1,17 @@
+<!doctype html>
+<html class="dark" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Electron</title>
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://127.0.0.1:4747 http://localhost:4747; media-src 'self' blob:; connect-src 'self' ws://localhost:8000 ws://127.0.0.1:8000 http://127.0.0.1:8000"
+    />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
