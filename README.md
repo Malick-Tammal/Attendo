@@ -102,8 +102,6 @@ npm run build:linux               # Linux
 backend/                     Python FastAPI backend
   core/                      config (Mongo URI) + database client
   services/                  face engine, attendance logic
-  known_faces/               runtime face data (git-ignored, .gitkeep kept)
-  models/                    downloaded ML models (git-ignored, .gitkeep kept)
   main.py                    HTTP + WebSocket entrypoint
   requirements.txt           pinned Python dependencies
 src/
@@ -122,8 +120,6 @@ docker-compose.yml           MongoDB service
 - **MediaPipe runtime** (`src/renderer/public/mediapipe/`, ~35 MB) is **not**
   committed — it is regenerated on `npm install` by
   `scripts/copy-mediapipe.mjs`.
-- **`backend/known_faces/` and `backend/models/`** are runtime/data folders;
-  their contents are git-ignored (only `.gitkeep` is tracked).
 - **Windows**: activate the venv with `venv\Scripts\activate`. The Electron
   backend spawner currently uses the POSIX `venv/bin/python` path, so running
   the backend manually on Windows may need `venv\Scripts\python.exe`.

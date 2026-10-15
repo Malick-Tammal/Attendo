@@ -5,6 +5,7 @@ import { Spinner, Alert } from "@heroui/react"
 import { Camera, CameraOff } from "lucide-react"
 import { useAIWebSocket } from "@renderer/hooks/useAIWebSocket"
 import { cropFaceAsBase64 } from "@renderer/utils/cameraUtils"
+import { FaceTracker } from "@renderer/utils/faceTracker"
 import type { TrackedFace } from "@renderer/types"
 
 interface VideoViewportProps {
@@ -25,6 +26,7 @@ export function VideoViewport({
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
   const cropCanvasRef = useRef<HTMLCanvasElement>(null)
   const animFrameRef = useRef<number>(0)
+  const trackerRef = useRef<FaceTracker>(new FaceTracker())
   const { knownFacesRef, sendCroppedFaces } = useAIWebSocket()
 
   useEffect(() => {
@@ -59,20 +61,29 @@ export function VideoViewport({
         const result = detector.detectForVideo(video, performance.now())
         const detections = result.detections ?? []
 
+        // ── Convert MediaPipe boxes to tracker-friendly format ────────────
+        const rawBoxes = detections.map((det) => {
+          const bb = det.boundingBox!
+          return { x: bb.originX, y: bb.originY, w: bb.width, h: bb.height }
+        })
+
+        // ── Run IoU tracker → stable IDs (same order as detections) ──────
+        const diagSq = video.videoWidth * video.videoWidth + video.videoHeight * video.videoHeight
+        const stableIds = trackerRef.current.update(rawBoxes, diagSq)
+
         // ── Prune stale entries from knownFacesRef ────────────────────────
+        const liveIds = trackerRef.current.liveIds
         for (const key of knownFacesRef.current.keys()) {
-          if (Number(key) >= detections.length) {
-            knownFacesRef.current.delete(key)
-          }
+          if (!liveIds.has(key)) knownFacesRef.current.delete(key)
         }
 
-        // ── Build payloads using STABLE index-based IDs ───────────────────
+        // ── Build payloads using stable tracking IDs ──────────────────────
         const payloads: { id: string; image: string }[] = []
         detections.forEach((det, index) => {
           const bb = det.boundingBox
           if (!bb) return
           const face: TrackedFace = {
-            id: String(index),
+            id: stableIds[index],
             box: { x: bb.originX, y: bb.originY, w: bb.width, h: bb.height },
             name: "",
             role: "",
@@ -90,7 +101,7 @@ export function VideoViewport({
           const bb = det.boundingBox
           if (!bb) return
 
-          const info = knownFacesRef.current.get(String(index))
+          const info = knownFacesRef.current.get(stableIds[index])
           const granted = info?.accessGranted ?? false
 
           const x = bb.originX * scaleX
@@ -159,10 +170,7 @@ export function VideoViewport({
   }, [isPlaying, isModelLoading, faceDetectorRef, sendCroppedFaces, knownFacesRef, videoRef])
 
   return (
-    <div
-      className="relative w-full h-full overflow-hidden"
-      style={{ background: "var(--background)" }}
-    >
+    <div className="relative w-full h-full overflow-hidden bg-surface-tertiary">
       {/* Hidden crop canvas — never painted, used only for toDataURL() */}
       <canvas ref={cropCanvasRef} className="hidden" />
 
