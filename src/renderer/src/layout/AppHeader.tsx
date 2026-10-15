@@ -5,8 +5,8 @@ const STATUS_CONFIG: Record<
   DbStatus,
   { color: "success" | "danger" | "default"; label: string; ping: boolean }
 > = {
-  online: { color: "success", label: "DB Online", ping: true },
-  offline: { color: "danger", label: "DB Offline", ping: false },
+  online: { color: "success", label: "System Online", ping: true },
+  offline: { color: "danger", label: "System Offline", ping: false },
   checking: { color: "default", label: "Connecting…", ping: false }
 }
 
